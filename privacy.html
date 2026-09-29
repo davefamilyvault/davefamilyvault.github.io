@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Family Health: privacy</title>
+<style>
+  :root { color-scheme: light dark; --ink: #17252F; --muted: #4B5C66; --paper: #F3F6F5; --line: #D9E2DF; --link: #23408E; }
+  @media (prefers-color-scheme: dark) { :root { --ink: #E4ECEA; --muted: #A9B8B6; --paper: #0F1719; --line: #26363A; --link: #8FA8F0; } }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 17px/1.6 'Segoe UI', system-ui, -apple-system, Roboto, Arial, sans-serif; }
+  main { max-width: 680px; margin: 0 auto; padding: calc(40px + env(safe-area-inset-top, 0px)) 22px 60px; }
+  h1 { font-size: 1.8rem; line-height: 1.2; margin: 0 0 6px; }
+  h2 { font-size: 1.1rem; margin: 28px 0 6px; }
+  p { margin: 0 0 10px; color: var(--muted); }
+  a { color: var(--link); }
+  .meta { border-top: 1px solid var(--line); margin-top: 32px; padding-top: 14px; font-size: .9rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Family Health privacy</h1>
+  <p>Family Health is a private app used by one family to keep their own medical reports. It is not offered to the public.</p>
+
+  <h2>Where your records are kept</h2>
+  <p>Reports, medicines and documents are stored in the app's storage on each device where the app is used. There is no Family Health server, and the app does not collect analytics or share data with anyone.</p>
+
+  <h2>Syncing with Google Drive</h2>
+  <p>If sync is turned on, the app signs in to the family's own Google account and uses only Drive's hidden app folder (the drive.appdata permission). It cannot see any other files in Drive. Records are encrypted on the device with the family's passphrase before upload, so the stored files cannot be read without it.</p>
+
+  <h2>Removing data</h2>
+  <p>Data can be erased on any device from Backup and export in the app. Sync access can be removed at any time from the Google account's security settings, under third-party connections.</p>
+
+  <p class="meta"><a href="./">Open Family Health</a></p>
+</main>
+</body>
+</html>
