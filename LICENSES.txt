@@ -1,0 +1,4 @@
+PDF.js 3.11.174 (Mozilla, Apache License 2.0): pdf.min.js, pdf.worker.min.js
+Tesseract.js 7.0.0 and tesseract.js-core 7.0.0 (Apache License 2.0): tesseract/*.js
+Tesseract English model, 4.0.0_best_int (Apache License 2.0): tesseract/eng.traineddata.gz
+All run on the device; nothing is sent anywhere.
