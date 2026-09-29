@@ -2288,9 +2288,20 @@ if (typeof module !== 'undefined') module.exports = RD;
 const READ = { state: null };
 const libUrl = p => new URL('lib/' + p, location.href).href;
 function readerAvailable() { return /^https?:$/.test(location.protocol) && !/claude|anthropic/.test(location.hostname); }
-function loadScript(src) {
-  return new Promise((res, rej) => { if ([...document.scripts].some(s => s.src === src)) return res();
-    const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load the report reader. Open the app once with internet so it can download.')); document.head.appendChild(s); });
+async function ensureLib(src, globalName) {
+  // load a reader library and make sure it really started; if not, say exactly why
+  if (window[globalName]) return;
+  for (const attempt of [0, 1]) {
+    document.querySelectorAll(`script[data-lib="${globalName}"]`).forEach(s => s.remove());
+    await new Promise(res => { const s = document.createElement('script'); s.dataset.lib = globalName; s.src = attempt ? `${src}?r=${Date.now()}` : src;
+      s.onload = () => res(); s.onerror = () => res(); document.head.appendChild(s); });
+    if (window[globalName]) return;
+  }
+  let status = 0; try { status = (await fetch(src, { cache: 'no-store' })).status; } catch (e) {}
+  const path = src.replace(location.origin, '');
+  if (status === 404) throw new Error(`The report reader files are missing from the website (${path} was not found). Upload the lib folder to GitHub as a folder, then try again.`);
+  if (!status) throw new Error('Could not download the report reader. Connect to the internet once so it can be saved on this device, then try again.');
+  throw new Error('This browser could not start the report reader. Update the device software (on iPhone: Settings, General, Software Update), or use Chrome on a computer.');
 }
 
 /* ---------- units: a few conversions labs in India commonly need ---------- */
@@ -2313,7 +2324,7 @@ function unitMismatch(testId, labUnit) {
 
 /* ---------- turning a file into pages {canvas, items, ocr} ---------- */
 async function pdfPages(file, onStep, askPassword) {
-  await loadScript(libUrl('pdf.min.js'));
+  await ensureLib(libUrl('pdf.min.js'), 'pdfjsLib');
   pdfjsLib.GlobalWorkerOptions.workerSrc = libUrl('pdf.worker.min.js');
   const data = new Uint8Array(await file.arrayBuffer());
   let doc, password;
@@ -2383,7 +2394,7 @@ function rotateCanvas(src, ang) {
   return c;
 }
 async function ocrPages(pages, onStep) {
-  await loadScript(libUrl('tesseract/tesseract.min.js'));
+  await ensureLib(libUrl('tesseract/tesseract.min.js'), 'Tesseract');
   let current = 0;
   const worker = await Tesseract.createWorker('eng', 1, {
     workerPath: libUrl('tesseract/worker.min.js'), corePath: libUrl('tesseract/'), langPath: libUrl('tesseract'), workerBlobURL: false, gzip: true,
@@ -2767,6 +2778,11 @@ async function start() {
   window.addEventListener('hashchange', router);
   window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); window.__installPrompt = e; if (location.hash.includes('settings')) router(); });
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost') && !/claude|anthropic/.test(location.hostname) && window.top === window) {
+    const hadController = !!navigator.serviceWorker.controller; let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloading || document.querySelector('form') || (typeof READ !== 'undefined' && READ.state)) return;
+      reloading = true; location.reload();
+    });
     navigator.serviceWorker.register('sw.js').catch(() => {});
   }
   window.addEventListener('resize', () => window.__redraw && window.__redraw());
