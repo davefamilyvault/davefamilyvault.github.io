@@ -377,6 +377,25 @@ table.grid th.stick a { text-decoration: none; } table.grid th.stick a:hover { t
 @media (prefers-reduced-motion: no-preference) { .spin { animation: spin 1s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } } }
 details summary { cursor: pointer; color: var(--ink-2); }
 .rail .syncpill span { white-space: normal; text-align: left; }
+.progress { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-top: 12px; }
+.progress span { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width .3s; }
+.rlist2 { display: flex; flex-direction: column; gap: 12px; }
+.rrow { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); padding: 14px 16px 14px 10px; }
+.rrow.off { opacity: .55; background: var(--paper); }
+.rrow.off .snip { filter: grayscale(1); }
+.rinc { display: flex; justify-content: center; padding-top: 4px; }
+.rinc input { width: 20px; height: 20px; accent-color: var(--primary); }
+.snip { display: block; width: 100%; height: auto; border-radius: 8px; border: 1px solid var(--line); background: #fff; }
+.rfields { display: grid; grid-template-columns: minmax(180px, 1.3fr) minmax(150px, 1fr) minmax(140px, 1.2fr); gap: 10px; align-items: center; margin-top: 10px; }
+.rfields .unitbox { display: flex; align-items: center; gap: 8px; } .rfields .unitbox span { color: var(--ink-3); font-size: .85rem; white-space: nowrap; }
+.rstat { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rwarn { margin-top: 8px; font-size: .86rem; color: var(--warn); font-weight: 650; }
+.rrow .faint.small { margin-top: 6px; }
+@media (max-width: 640px) { .rfields { grid-template-columns: 1fr; } }
+.only-touch { display: none; }
+@media (hover: none) and (pointer: coarse) { .only-touch { display: inline-flex; } }
+a.notice:hover { filter: brightness(.98); }
+.snip { max-width: 640px; }
 
 </style>
 </head>
@@ -410,8 +429,6 @@ const nf = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 2 });
 function fmtNum(v) {
   if (v === null || v === undefined || v === '') return '';
   if (typeof v !== 'number') return String(v);
-  const a = Math.abs(v);
-  if (a >= 100) return new Intl.NumberFormat('en-IN', { maximumFractionDigits: 1 }).format(v);
   return nf.format(v);
 }
 function ageOn(dob, iso) {
@@ -451,6 +468,7 @@ const ICONS = {
   cloud: '<path d="M7 18.5h10.2a4.3 4.3 0 0 0 .5-8.57A6.2 6.2 0 0 0 5.9 8.9 4.8 4.8 0 0 0 7 18.5z"/>',
   refresh: '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>',
+  scan: '<path d="M4 8V5.5A1.5 1.5 0 0 1 5.5 4H8M16 4h2.5A1.5 1.5 0 0 1 20 5.5V8M20 16v2.5a1.5 1.5 0 0 1-1.5 1.5H16M8 20H5.5A1.5 1.5 0 0 1 4 18.5V16"/><path d="M8 9h8M8 12h8M8 15h5"/>',
   phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
   image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
   table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/>',
@@ -1030,14 +1048,15 @@ function renderShell(route) {
   }).join('');
   rail.innerHTML = `<a class="brand" href="#/"><span class="brand-mark">${icon('heart')}</span>Family health</a>
     <nav aria-label="Main"><a class="rail-link" href="#/" ${route.name === 'home' ? 'aria-current="page"' : ''}>${icon('home')}Family</a>
-      <a class="rail-link" href="#/add${route.member ? '?p=' + esc(route.member.key) : ''}" ${route.name === 'editor' ? 'aria-current="page"' : ''}>${icon('plus')}Add a report</a></nav>
+      <a class="rail-link" href="#/read${route.member ? '?p=' + esc(route.member.key) : ''}" ${route.name === 'read' ? 'aria-current="page"' : ''}>${icon('scan')}Read a lab report</a>
+      <a class="rail-link" href="#/add${route.member ? '?p=' + esc(route.member.key) : ''}" ${route.name === 'editor' ? 'aria-current="page"' : ''}>${icon('plus')}Type in a report</a></nav>
     <div><div class="rail-label">People</div><nav aria-label="People">${people}</nav></div>
     <div class="rail-foot"><span class="syncpill-slot" style="padding:0 6px 8px">${syncPillHtml()}</span><a class="rail-link" href="#/data" ${route.name === 'data' ? 'aria-current="page"' : ''}>${icon('data')}Backup and export</a>
       <a class="rail-link" href="#/settings" ${route.name === 'settings' ? 'aria-current="page"' : ''}>${icon('settings')}Settings</a></div>`;
   $('#topbar').innerHTML = `${route.back ? `<a class="icon-btn" href="${route.back}" aria-label="Back">${icon('back')}</a>` : `<span class="brand-mark" style="margin-left:6px">${icon('heart')}</span>`}
     <span class="title">${esc(route.title || 'Family health')}</span><span class="syncpill-slot compact">${syncPillHtml()}</span><a class="icon-btn" href="#/settings" aria-label="Settings">${icon('settings')}</a>`;
   $('#bottombar').innerHTML = `<a href="#/" ${['home', 'person', 'report', 'trend'].includes(route.name) ? 'aria-current="page"' : ''}>${icon('home')}Family</a>
-    <a class="add" href="#/add${route.member ? '?p=' + esc(route.member.key) : ''}" ${route.name === 'editor' ? 'aria-current="page"' : ''}><span class="icon-wrap">${icon('plus')}</span>Add report</a>
+    <a class="add" href="#/${readerAvailable() ? 'read' : 'add'}${route.member ? '?p=' + esc(route.member.key) : ''}" ${['editor', 'read'].includes(route.name) ? 'aria-current="page"' : ''}><span class="icon-wrap">${icon('plus')}</span>Add report</a>
     <a href="#/data" ${route.name === 'data' ? 'aria-current="page"' : ''}>${icon('data')}Backup</a>`;
 }
 
@@ -1074,7 +1093,7 @@ function viewHome() {
   }).join('');
   return `<div class="page">
     <div class="page-head"><div><h1>Family health</h1><p class="lead">${people.length} ${people.length === 1 ? 'person' : 'people'}, ${allReps.length} reports${allReps[0] ? `. Latest report on ${fmtDate(allReps[0].date)}` : ''}.</p></div>
-      <span class="spacer"></span><a class="btn primary" href="#/add">${icon('plus')}Add a report</a></div>
+      <span class="spacer"></span><a class="btn" href="#/add">${icon('plus')}Type in a report</a><a class="btn primary" href="#/read">${icon('scan')}Read a lab report</a></div>
     ${notice}${syncHint}
     <div class="register">${rows}</div>
     <div class="row" style="margin-top:16px"><a class="btn ghost" href="#/person/new">${icon('user')}Add a person</a></div></div>`;
@@ -1088,7 +1107,7 @@ function personHead(m, tab) {
     m.targetSet && S.targetSets.get(m.targetSet) && `<span>Targets <b>${esc(S.targetSets.get(m.targetSet).name)}</b></span>`].filter(Boolean).join('');
   const tabs = [['overview', 'Overview'], ['reports', 'Reports'], ['table', 'Table'], ['medicines', 'Medicines'], ['history', 'History and documents']];
   return `<div class="person-head">${avatar(m, 'lg')}<div style="flex:1;min-width:220px"><h1>${esc(m.name)}</h1><div class="facts">${facts}</div></div>
-    <div class="row"><a class="btn ghost" href="#/person/${esc(m.key)}/edit">${icon('edit')}Edit details</a><a class="btn primary" href="#/add?p=${esc(m.key)}">${icon('plus')}Add a report</a></div></div>
+    <div class="row"><a class="btn ghost" href="#/person/${esc(m.key)}/edit">${icon('edit')}Edit details</a><a class="btn" href="#/add?p=${esc(m.key)}">${icon('plus')}Type in a report</a><a class="btn primary" href="#/read?p=${esc(m.key)}">${icon('scan')}Read a lab report</a></div></div>
     <nav class="tabs" aria-label="${esc(m.name)}">${tabs.map(([k, l]) => `<a href="#/p/${esc(m.key)}/${k}" ${tab === k ? 'aria-current="page"' : ''}>${l}</a>`).join('')}</nav>`;
 }
 function deltaHtml(id, cur, prev, m) {
@@ -1247,7 +1266,7 @@ function openDocument(d, m) {
   let i = 0;
   const o = h(`<div class="overlay" role="dialog" aria-modal="true" aria-label="${esc(d.title)}"><div class="viewer"><div class="vbar">
     <div style="flex:1;min-width:0"><b>${esc(d.title)}</b><div class="small muted">${d.kind ? esc(d.kind) + '. ' : ''}${d.note ? esc(d.note) : ''}</div></div>
-    <label class="small">Date <input type="date" class="input" style="min-height:36px;width:auto;display:inline-block" value="${esc(d.date || '')}" data-date></label>
+    ${d._preview ? '' : `<label class="small">Date <input type="date" class="input" style="min-height:36px;width:auto;display:inline-block" value="${esc(d.date || '')}" data-date></label>`}
     <span class="small pageno"></span><button class="icon-btn" data-prev aria-label="Previous page">${icon('back')}</button><button class="icon-btn" data-next aria-label="Next page">${icon('chevron')}</button>
     <button class="icon-btn" data-close aria-label="Close">${icon('close')}</button></div><div class="vbody"><img alt=""></div></div></div>`);
   const img = $('img', o);
@@ -1255,7 +1274,7 @@ function openDocument(d, m) {
   const close = () => { o.remove(); document.removeEventListener('keydown', key); };
   const key = e => { if (e.key === 'Escape') close(); if (e.key === 'ArrowRight') { i = Math.min(d.pages.length - 1, i + 1); show(); } if (e.key === 'ArrowLeft') { i = Math.max(0, i - 1); show(); } };
   o.addEventListener('click', e => { if (e.target === o || e.target.closest('[data-close]')) close(); if (e.target.closest('[data-prev]')) { i = Math.max(0, i - 1); show(); } if (e.target.closest('[data-next]')) { i = Math.min(d.pages.length - 1, i + 1); show(); } });
-  $('[data-date]', o).addEventListener('change', async e => {
+  if (!d._preview) $('[data-date]', o).addEventListener('change', async e => {
     await S.save('documents', { ...d, date: e.target.value || null }); d.date = e.target.value || null;
     if (d.date) { const open = S.getMeta('openItems', []).filter(x => !(x.kind === 'doc_date' && x.documentId === d.id)); await S.setMeta('openItems', open); }
     toast('Date saved'); router();
@@ -1271,7 +1290,9 @@ function viewReport(r) {
   let list = '';
   for (const [cat, tests] of groups) {
     list += `<div class="vgroup">${esc(cat)}</div>`;
-    for (const t of tests) { const x = xs.find(x => x.testId === t.id); list += valueRow(m, t, x, r.date, { sub: x.correction ? `Corrected from ${esc(fmtNum(x.correction.previousValue))}` : '' }); }
+    for (const t of tests) { const x = xs.find(x => x.testId === t.id);
+      const sub = x.correction ? `Corrected from ${esc(fmtNum(x.correction.previousValue))}` : x.replaced ? `Updated from the lab report (was ${esc(fmtNum(x.replaced.value ?? x.replaced.text))}${x.replaced.calculated ? ', calculated' : ''})` : x.labRange ? `Lab's range: ${esc(x.labRange.length > 60 ? x.labRange.slice(0, 60) + '…' : x.labRange)}` : '';
+      list += valueRow(m, t, x, r.date, { sub }); }
   }
   const dvIds = Object.keys(dv).filter(k => S.test(k) && !xs.some(x => x.testId === k));
   if (dvIds.length) { list += '<div class="vgroup">Calculated from this report</div>'; dvIds.forEach(k => { list += valueRow(m, S.test(k), { value: dv[k] }, r.date, { calc: true }); }); }
@@ -1280,9 +1301,11 @@ function viewReport(r) {
     <div class="page-head"><div><div class="row" style="gap:8px">${avatar(m, 'sm')}<span class="muted">${esc(m.name)}</span></div><h1 style="margin-top:10px">${r.date ? fmtDate(r.date) : 'Report without a date'}</h1>
       <p class="lead">${esc(r.lab || 'Lab not recorded')}${r.time ? ', ' + fmtTime(r.time) : ''}. ${xs.length} values${fl ? `, ${fl} outside the normal range` : ''}.</p></div>
       <span class="spacer"></span><button class="btn ghost danger" data-del>${icon('trash')}Delete</button><a class="btn" href="#/edit/${esc(r.id)}">${icon('edit')}Edit report</a></div>
+    ${(() => { const d = S.live('documents').find(d => d.reportId === r.id); return d ? `<button class="btn" data-doc="${esc(d.id)}" style="margin-bottom:18px">${icon('file')}View the original report (${d.pages.length} page${d.pages.length > 1 ? 's' : ''})</button>` : ''; })()}
     ${r.notes && r.notes.length ? `<div class="panel pad" style="margin-bottom:18px"><h3 style="margin-bottom:6px">Notes</h3>${r.notes.map(n => `<p class="muted" style="margin-top:4px">${esc(n)}</p>`).join('')}</div>` : ''}
     ${xs.length ? `<div class="vlist">${list}</div>` : '<div class="panel empty">This report has no values.</div>'}
-    ${r.source && r.source.length ? `<p class="faint small" style="margin-top:14px">Imported from your Excel workbook (${esc(r.originalHeading || '')}, ${esc(r.source.join(', '))}).</p>` : ''}</div>`;
+    ${r.originalHeading ? `<p class="faint small" style="margin-top:14px">Imported from your Excel workbook (${esc(r.originalHeading)}, ${esc((r.source || []).filter(s => !/^PDF /.test(s)).join(', '))}).</p>` : ''}
+    ${(r.source || []).some(s => /^PDF /.test(s)) ? `<p class="faint small" style="margin-top:6px">Read from ${esc(r.source.filter(s => /^PDF /.test(s)).map(s => s.slice(4)).join(', '))}.</p>` : ''}</div>`;
 }
 
 /* ---------------- trend ---------------- */
@@ -1332,6 +1355,7 @@ function viewEditor(route) {
   if (!m) return `<div class="page"><div class="panel empty"><h2>Add a person first</h2><p style="margin:8px 0 16px">Reports belong to a person.</p><a class="btn primary" href="#/person/new">Add a person</a></div></div>`;
   return `<div class="page" style="max-width:900px"><a class="back" href="${editing ? '#/r/' + esc(editing.id) : '#/p/' + esc(m.key)}">${icon('back')}Cancel</a>
     <div class="page-head"><div><h1>${editing ? 'Edit report' : 'Add a report'}</h1><p class="lead">Enter the values as printed on the lab report. Anything unusual is pointed out before you save.</p></div></div>
+    ${!editing && readerAvailable() ? `<a class="notice" href="#/read${m ? '?p=' + esc(m.key) : ''}" style="background:var(--primary-soft);text-decoration:none;color:inherit">${icon('scan')}<div style="flex:1"><b>Have the lab's PDF or a photo?</b><div class="small">Let the app read the values for you, then just check them.</div></div>${icon('chevron')}</a>` : ''}
     <form id="rep-form" novalidate>
       <div class="panel pad"><div class="grid-2">
         <label class="field"><span>Person</span><select class="input" name="member">${S.memberOrder.map(p => `<option value="${esc(p.id)}" ${p.id === m.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
@@ -2008,6 +2032,620 @@ function joinVaultStep(vault) {
 }
 
 'use strict';
+/* ============================================================
+   Lab report reader. Works on "items": pieces of text with a position,
+   {s, x, y, w, h, conf?}, where y is the text baseline, in the same units
+   as the page image (so rows can be cropped for the review screen).
+   Items come either from the PDF's own text (exact) or from OCR.
+   ============================================================ */
+const RD = {};
+
+/* names labs print, mapped to our test ids (added to each test's own name and aliases) */
+RD.LAB_ALIASES = {
+  tc: ['cholesterol', 'total cholesterol', 'serum cholesterol', 'cholesterol total', 's cholesterol', 'cholesterol serum'],
+  tg: ['triglyceride', 'triglycerides', 'serum triglycerides', 's triglycerides', 'triglycerides serum'],
+  hdl: ['hdl cholesterol', 'hdl', 'hdl cholesterol direct', 'direct hdl', 'hdl c', 'high density lipoprotein'],
+  ldl: ['direct ldl', 'ldl cholesterol', 'ldl', 'ldl direct', 'ldl cholesterol direct', 'ldl c', 'low density lipoprotein', 'ldl cholesterol calculated'],
+  vldl: ['vldl', 'vldl cholesterol', 'vldl calculated'],
+  tc_hdl: ['chol hdl ratio', 'cholesterol hdl ratio', 'tc hdl ratio', 'total cholesterol hdl ratio', 'chol hdl'],
+  ldl_hdl: ['dldl hdl ratio', 'ldl hdl ratio', 'ldl hdl'],
+  non_hdl: ['non hdl cholesterol', 'non hdl'],
+  lpa: ['lipoprotein a', 'lp a', 'lipoprotein little a'],
+  apoa1: ['apolipoprotein a1', 'apo a1', 'apo a 1'], apob: ['apolipoprotein b', 'apo b'],
+  hba1c: ['hba1c', 'glycosylated hemoglobin', 'glycosylated haemoglobin', 'glycated hemoglobin', 'glycated haemoglobin', 'hb a1c', 'hemoglobin a1c'],
+  eag: ['mean blood glucose', 'estimated average glucose', 'eag', 'average blood glucose', 'mean plasma glucose'],
+  fbs: ['fasting blood sugar', 'blood sugar fasting', 'glucose fasting', 'fasting plasma glucose', 'plasma glucose fasting', 'fbs', 'fasting glucose', 'blood glucose fasting'],
+  ppbs: ['post prandial blood sugar', 'blood sugar pp', 'glucose pp', 'glucose post prandial', 'post prandial plasma glucose', 'ppbs', 'pp2bs', 'blood sugar post prandial', 'plasma glucose pp'],
+  hb: ['haemoglobin', 'hemoglobin', 'hb', 'hgb'],
+  rbc: ['rbc count', 'total rbc count', 'red blood cell count', 'rbc'],
+  wbc: ['total wbc count', 'wbc count', 'total leucocyte count', 'total leukocyte count', 'tlc', 'wbc', 'total count'],
+  platelets: ['platelet count', 'platelets', 'plt'],
+  neutrophils: ['neutrophils', 'polymorphs', 'neutrophil'], lymphocytes: ['lymphocytes', 'lymphocyte'], monocytes: ['monocytes', 'monocyte'],
+  eosinophils: ['eosinophils', 'eosinophil'], basophils: ['basophils', 'basophil'],
+  creatinine: ['creatinine', 'serum creatinine', 's creatinine', 'creatinine serum'],
+  urea: ['urea', 'blood urea', 'serum urea'], uric_acid: ['uric acid', 'serum uric acid', 's uric acid'],
+  sgot: ['sgot', 'ast', 'sgot ast', 'ast sgot', 'aspartate aminotransferase'], sgpt: ['sgpt', 'alt', 'sgpt alt', 'alt sgpt', 'alanine aminotransferase'],
+  ggt: ['ggt', 'gamma gt', 'gamma glutamyl transferase', 'ggtp'],
+  tsh: ['tsh', 'tsh thyroid stimulating hormone', 'thyroid stimulating hormone', 'tsh ultrasensitive', 'us tsh'],
+  ft3: ['free t3', 'ft3', 'free triiodothyronine'], ft4: ['free t4', 'ft4', 'free thyroxine'],
+  anti_tpo: ['anti tpo', 'thyroid peroxidase antibody', 'anti thyroid peroxidase'], prolactin: ['prolactin', 'prl'],
+  vitd: ['vitamin d', '25 oh vitamin d', '25 hydroxy vitamin d', 'vitamin d total', 'vitamin d3', '25 oh vit d'],
+  b12: ['vitamin b12', 'vit b12', 'cyanocobalamin'],
+  psa: ['psa', 'total psa', 'prostate specific antigen'], crp: ['crp', 'c reactive protein'], ra_factor: ['ra factor', 'rheumatoid factor'],
+  hbsag: ['hbsag', 'hepatitis b surface antigen', 'australia antigen'], hcv: ['hcv', 'anti hcv', 'hepatitis c'], hiv: ['hiv', 'hiv 1 and 2', 'hiv i ii'], vdrl: ['vdrl'],
+  weight: ['weight'], height: ['height'], pulse: ['pulse'],
+};
+const TEXT_RESULTS = ['non reactive', 'nonreactive', 'reactive', 'negative', 'positive', 'absent', 'present', 'nil', 'normal', 'abnormal', 'trace', 'not detected', 'detected'];
+const HEAD = {
+  test: /^(test(\s*name)?|investigations?|parameters?|test\s*description|examination|description)$/i,
+  result: /^(results?|observed\s*values?|value|observation|your\s*value)$/i,
+  unit: /^units?$/i,
+  range: /^(biological|bio\.?\s*ref|ref(erence)?|normal|reference\s*range|ref\.?\s*range|reference\s*interval|normal\s*range)/i,
+};
+const STOP_LINE = /(end\s*of\s*report|electronically\s*authenticated|authorised\s*signatory|authorized\s*signatory)/i;
+
+RD.norm = s => String(s || '').toLowerCase().replace(/µ|μ/g, 'u').replace(/[\u2010-\u2015]/g, '-').replace(/[^a-z0-9%]+/g, ' ').trim();
+function lev(a, b) {
+  if (a === b) return 0; const m = a.length, n = b.length; if (!m || !n) return m || n;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) { const cur = [i]; for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); prev = cur; }
+  return prev[n];
+}
+RD.sim = (a, b) => 1 - lev(a, b) / Math.max(a.length, b.length, 1);
+
+/* ---------- index of every name a test is known by ---------- */
+RD.buildIndex = (tests) => {
+  const idx = new Map();
+  const add = (k, id) => { k = RD.norm(k); if (k && !idx.has(k)) idx.set(k, id); };
+  for (const t of tests) { if (t.deleted || t.id === 'ra_or_crp') continue; add(t.name, t.id); add(t.name.replace(/\(.*?\)/g, ''), t.id); (t.aliases || []).forEach(a => add(a, t.id)); }
+  for (const [id, al] of Object.entries(RD.LAB_ALIASES)) al.forEach(a => add(a, id));
+  return idx;
+};
+RD.matchTest = (name, idx) => {
+  const n = RD.norm(name); if (!n) return null;
+  const tries = [n, RD.norm(name.replace(/\(.*?\)/g, '')), RD.norm((name.match(/\(([^)]*)\)/) || [])[1] || ''), n.replace(/^(serum|plasma|blood|s)\s+/, '')].filter(Boolean);
+  for (const t of tries) if (idx.has(t)) return { id: idx.get(t), sure: true };
+  let best = null;
+  for (const [k, id] of idx) {
+    if (k.length < 3) continue;
+    const s = RD.sim(n, k);
+    if (!best || s > best.s) best = { id, s };
+  }
+  return best && best.s >= 0.82 ? { id: best.id, sure: false } : null;
+};
+
+/* ---------- drop watermarks, rotated text and empty pieces ---------- */
+RD.clean = (items) => items.filter(i => i.s && i.s.trim() && !i.rotated && i.s.length <= 120 && !/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}/i.test(i.s) && !/^\s*page\s*\d+\s*(of|\/)\s*\d+\s*$/i.test(i.s))
+  .map(i => ({ ...i, s: i.s.replace(/\s+/g, ' ') }));
+
+/* ---------- lines ---------- */
+RD.lines = (items) => {
+  const hs = items.map(i => i.h).sort((a, b) => a - b); const medH = hs[Math.floor(hs.length / 2)] || 10;
+  const sorted = items.slice().sort((a, b) => a.y - b.y || a.x - b.x);
+  const lines = [];
+  for (const it of sorted) {
+    const tol = Math.max(medH * 0.45, Math.min(it.h, medH) * 0.45);
+    const ln = lines.find(l => Math.abs(l.y - it.y) <= tol);
+    if (ln) { ln.items.push(it); ln.y = (ln.y * (ln.items.length - 1) + it.y) / ln.items.length; ln.h = Math.max(ln.h, it.h); }
+    else lines.push({ y: it.y, h: it.h, items: [it] });
+  }
+  lines.forEach(l => { l.items.sort((a, b) => a.x - b.x); l.text = l.items.map(i => i.s).join(' ').replace(/\s+/g, ' ').trim(); });
+  return { lines: lines.sort((a, b) => a.y - b.y), medH };
+};
+
+/* ---------- a result cell ---------- */
+RD.parseResult = (raw) => {
+  let s = String(raw || '').replace(/\s+/g, ' ').trim();
+  let flag = null;
+  const fm = s.match(/^(\(?\s*(HH|LL|H|L|High|Low|\*|↑|↓)\s*\)?)\s+(?=[<>≤≥]?\s*[\d.])/i) || s.match(/\s+(\(?(HH|LL|H|L|High|Low|\*)\)?)$/i);
+  if (fm) { flag = fm[2].toUpperCase().startsWith('H') || fm[2] === '↑' ? 'H' : fm[2].toUpperCase().startsWith('L') || fm[2] === '↓' ? 'L' : '*'; s = s.replace(fm[0], ' ').trim(); }
+  const m = s.match(/^([<>]=?|≤|≥)?\s*(\d{1,3}(?:,\d{2,3})+(?:\.\d+)?|\d+(?:\.\d+)?|\.\d+)(.*)$/);
+  if (m) {
+    const q = m[1] ? m[1].replace('≤', '<=').replace('≥', '>=') : null;
+    return { value: parseFloat(m[2].replace(/,/g, '')), qualifier: q, text: q ? `${q}${m[2]}` : null, flag, rest: m[3].trim() };
+  }
+  const low = RD.norm(s);
+  if (TEXT_RESULTS.some(w => low === w || low.startsWith(w + ' '))) return { value: null, text: s.replace(/\b\w/g, c => c.toUpperCase()).replace(/^Non Reactive/i, 'Non reactive'), flag, rest: '' };
+  return null;
+};
+
+/* ---------- the table on one page ---------- */
+RD.parsePage = (page, idx, pageNo = 0) => {
+  const { lines, medH } = RD.lines(page.items);
+  const rows = []; let cols = null; let lastNameLine = null; let stopped = false;
+  const margin = medH * 2.8;
+  for (let li = 0; li < lines.length; li++) {
+    const ln = lines[li];
+    if (STOP_LINE.test(ln.text)) { stopped = true; }
+    const hTest = ln.items.find(i => HEAD.test.test(i.s.trim())), hRes = ln.items.find(i => HEAD.result.test(i.s.trim()));
+    if (hTest && hRes && hRes.x > hTest.x) {
+      const u = ln.items.find(i => HEAD.unit.test(i.s.trim()) && i.x > hRes.x), r = ln.items.find(i => HEAD.range.test(i.s.trim()) && i.x > hRes.x);
+      cols = { test: hTest.x, result: hRes.x, unit: u ? u.x : null, range: r ? r.x : null, y: ln.y };
+      stopped = false; lastNameLine = null; continue;
+    }
+    if (!cols || stopped) continue;
+    const resStart = cols.result - margin;
+    const resEnd = (cols.unit ?? cols.range ?? Infinity) - medH * 0.8;
+    const unitEnd = (cols.range ?? Infinity) - medH * 0.8;
+    const nameItems = ln.items.filter(i => i.x < resStart);
+    const resItems = ln.items.filter(i => i.x >= resStart && i.x < resEnd);
+    const unitItems = cols.unit != null ? ln.items.filter(i => i.x >= resEnd && i.x < unitEnd) : [];
+    const rangeItems = cols.range != null ? ln.items.filter(i => i.x >= unitEnd) : [];
+    let name = nameItems.map(i => i.s).join(' ').replace(/\s+/g, ' ').trim();
+    const resTxt = resItems.map(i => i.s).join(' ').trim();
+    const small = nameItems.length && Math.max(...nameItems.map(i => i.h)) < medH * 0.85;
+    if (!resTxt) {
+      if (rows.length && rangeItems.length) rows[rows.length - 1].range.push(rangeItems.map(i => i.s).join(' '));
+      if (name && !small) lastNameLine = { name, line: ln };
+      continue;
+    }
+    let nameLine = ln;
+    if (!name && lastNameLine && ln.y - lastNameLine.line.y < medH * 2.2) { name = lastNameLine.name; nameLine = lastNameLine.line; }
+    lastNameLine = null;
+    if (!name) continue;
+    const pr = RD.parseResult(resTxt);
+    if (!pr) continue;                                                         // not a value (doctor names, notes)
+    const m = RD.matchTest(name, idx);
+    let unit = unitItems.map(i => i.s).join(' ').trim() || (pr.rest && /^[a-zµ%/]/i.test(pr.rest) ? pr.rest : '');
+    const all = [...nameItems, ...resItems, ...unitItems, ...rangeItems];
+    const conf = all.some(i => i.conf !== undefined) ? Math.min(...all.filter(i => i.conf !== undefined).map(i => i.conf)) : null;
+    rows.push({ page: pageNo, name, testId: m ? m.id : null, sure: m ? m.sure : false, value: pr.value, text: pr.text, qualifier: pr.qualifier, flag: pr.flag,
+      unit, range: rangeItems.length ? [rangeItems.map(i => i.s).join(' ')] : [], conf,
+      box: { top: Math.min(nameLine.y, ln.y) - medH * 1.25, bottom: ln.y + medH * 0.55, left: Math.min(...all.map(i => i.x)) - medH * 0.5, right: Math.max(...all.map(i => i.x + i.w)) + medH * 0.5,
+        coreRight: Math.max(...[...nameItems, ...resItems, ...unitItems].map(i => i.x + i.w)) + medH * 1.5 } });
+  }
+  rows.forEach(r => { r.range = r.range.join('; ').replace(/[\u2010-\u2015]/g, '-').replace(/(\d)\s*-\s*(\d)/g, '$1 - $2').replace(/\s+/g, ' ').replace(/;\s*;/g, ';').trim(); r.unit = r.unit.replace(/μ/g, 'µ'); });
+  return rows;
+};
+
+/* ---------- details at the top of the report ---------- */
+const MONTHS3 = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
+RD.parseDateTime = (s) => {
+  s = String(s || '');
+  let m = s.match(/(\d{1,2})[-\/ .]([A-Za-z]{3})[a-z]*[-\/ .,]*(\d{4})/); let d, mo, y;
+  if (m && MONTHS3[m[2].toLowerCase()]) { d = +m[1]; mo = MONTHS3[m[2].toLowerCase()]; y = +m[3]; }
+  else if ((m = s.match(/(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})/))) { d = +m[1]; mo = +m[2]; y = +m[3]; if (y < 100) y += 2000; if (mo > 12 && d <= 12) [d, mo] = [mo, d]; }
+  else return null;
+  if (!(mo >= 1 && mo <= 12 && d >= 1 && d <= 31)) return null;
+  const date = `${y}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  let time = null; const t = s.slice(s.indexOf(m[0]) + m[0].length).match(/(\d{1,2})[:.](\d{2})\s*(AM|PM)?/i);
+  if (t) { let hh = +t[1]; if (t[3] && /pm/i.test(t[3]) && hh < 12) hh += 12; if (t[3] && /am/i.test(t[3]) && hh === 12) hh = 0; if (hh < 24) time = `${String(hh).padStart(2, '0')}:${t[2]}`; }
+  return { date, time };
+};
+RD.LAB_KEYS = [[/accuris|sawpl/i, 'Sterling Accuris'], [/shri\s*rang/i, 'ShriRang Pathology, Bhavnagar'], [/accu\s*path/i, 'AccuPath, Bhavnagar'],
+  [/pradhan\s*mantri|pradhanmantri/i, 'Pradhan Mantri'], [/green\s*cross/i, 'Green Cross, Bhavnagar'], [/metropolis/i, 'Desai Metropolis'], [/thyrocare/i, 'Thyrocare'],
+  [/mahavir/i, 'Mahavir Hospital'], [/\bcnh\b|nn\s*care/i, 'CNH'], [/\bsrl\b|agilus/i, 'SRL'], [/lal\s*path/i, 'Dr Lal PathLabs'], [/neuberg/i, 'Neuberg']];
+RD.header = (pages) => {
+  const first = pages[0]; if (!first) return {};
+  const { lines } = RD.lines(first.items);
+  const valueRight = (label) => {
+    for (const ln of lines) {
+      const i = ln.items.findIndex(it => label.test(it.s.replace(/\s*:\s*$/, '').trim()));
+      if (i < 0) continue;
+      const lab = ln.items[i];
+      const inline = lab.s.split(':').slice(1).join(':').trim(); if (inline) return inline;
+      for (const it of ln.items.slice(i + 1)) {
+        const s = it.s.replace(/^[:;©®\s]+/, '').trim();
+        if (!s || !/[a-z0-9]/i.test(s) || s.length < 2) continue;
+        if (Object.values(HDR_LABELS).some(re => re.test(s))) break;
+        return s;
+      }
+    }
+    return null;
+  };
+  const out = {};
+  out.nameOnReport = (valueRight(HDR_LABELS.name) || '').replace(/\s{2,}.*$/, '').trim() || null;
+  const dt = RD.parseDateTime(valueRight(HDR_LABELS.collected) || '') || RD.parseDateTime(valueRight(HDR_LABELS.registered) || '') || RD.parseDateTime(valueRight(HDR_LABELS.reported) || '');
+  if (dt) { out.date = dt.date; out.time = dt.time; }
+  const allText = pages.map(p => p.items.map(i => i.s).join(' ')).join(' ');
+  const sa = allText.match(/\b(Male|Female)\s*\/\s*(\d{1,3})\s*(Y|Yrs|Years)?/i) || allText.match(/\b(\d{1,3})\s*(?:Y|Yrs|Years)\s*\/\s*(M|F|Male|Female)\b/i);
+  if (sa) { const sx = /^\d/.test(sa[1]) ? sa[2] : sa[1]; out.sex = /^f/i.test(sx) ? 'F' : 'M'; out.age = +(/^\d/.test(sa[1]) ? sa[1] : sa[2]); }
+  out.labId = valueRight(/^(lab\s*id|lab\s*no|sample\s*id|sid|reg(istration)?\s*no)$/i);
+  for (const [re, name] of RD.LAB_KEYS) if (re.test(allText)) { out.lab = name; break; }
+  return out;
+};
+const HDR_LABELS = {
+  name: /^(patient'?s?\s*name|name(\s*of\s*patient)?|patient)$/i,
+  collected: /^(collected\s*(on|date|date\s*&\s*time)?|collection\s*(date|on|time)|sample\s*collected(\s*on|\s*at)?|date\s*of\s*collection|sample\s*date)$/i,
+  registered: /^(registration\s*on|registered\s*on|reg\.?\s*date|received\s*on|sample\s*received)$/i,
+  reported: /^(reported\s*on|report\s*date|approved\s*on|date)$/i,
+  other: /^(sex\s*\/\s*age|age\s*\/\s*sex|lab\s*id|ref\.?\s*(by|id)|sample\s*type|client\s*name|location|printed\s*on|status|process\s*at|collected\s*at|passport\s*no)$/i,
+};
+
+/* ---------- which family member ---------- */
+RD.matchPerson = (nameOnReport, sex, age, members, today = new Date()) => {
+  if (!nameOnReport) return null;
+  const clean = s => RD.norm(s).replace(/\b(dr|mr|mrs|ms|miss|smt|shri|shree|master|baby|prof|kum|kumari)\b/g, ' ').trim().split(/\s+/).filter(Boolean);
+  const rt = clean(nameOnReport); let best = null;
+  for (const m of members) {
+    const mt = clean(m.name.replace(/[()]/g, ' '));
+    let s = 0; for (const a of rt) for (const b of mt) s = Math.max(s, RD.sim(a, b));
+    if (rt[0] && mt[0]) s = Math.max(s, (RD.sim(rt[0], mt[0]) + (rt[1] && mt[1] ? RD.sim(rt[1], mt[1]) : RD.sim(rt[0], mt[0]))) / 2);
+    if (sex && m.sex && sex !== m.sex) s -= 0.5;
+    if (age && m.dob) { const a = today.getFullYear() - +m.dob.slice(0, 4); if (Math.abs(a - age) <= 1) s += 0.1; else if (Math.abs(a - age) > 3) s -= 0.3; }
+    if (!best || s > best.s) best = { m, s };
+  }
+  return best && best.s >= 0.75 ? { member: best.m, sure: best.s >= 0.9 } : null;
+};
+
+/* ---------- everything together ---------- */
+RD.read = (pages, tests, members) => {
+  const idx = RD.buildIndex(tests);
+  const rows = pages.flatMap((p, i) => RD.parsePage(p, idx, i));
+  const head = RD.header(pages);
+  const who = RD.matchPerson(head.nameOnReport, head.sex, head.age, members);
+  const seen = new Set(); const out = [];
+  for (const r of rows) { const k = (r.testId || RD.norm(r.name)) + '|' + (r.value ?? r.text); if (seen.has(k)) continue; seen.add(k); out.push(r); }
+  return { head, who, rows: out };
+};
+if (typeof module !== 'undefined') module.exports = RD;
+
+'use strict';
+/* ============================================================
+   "Read a lab report": PDF (own text, exact) or photo/scan (OCR), then a review screen.
+   Libraries live in lib/ next to index.html and load only when needed.
+   ============================================================ */
+const READ = { state: null };
+const libUrl = p => new URL('lib/' + p, location.href).href;
+function readerAvailable() { return /^https?:$/.test(location.protocol) && !/claude|anthropic/.test(location.hostname); }
+function loadScript(src) {
+  return new Promise((res, rej) => { if ([...document.scripts].some(s => s.src === src)) return res();
+    const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('Could not load the report reader. Open the app once with internet so it can download.')); document.head.appendChild(s); });
+}
+
+/* ---------- units: a few conversions labs in India commonly need ---------- */
+const nu = u => String(u || '').toLowerCase().replace(/µ|μ/g, 'u').replace(/\s+/g, '').replace(/cells\//, '/').replace(/cumm|cmm|ul|mm3/g, 'ul');
+function convertUnit(testId, value, labUnit) {
+  const lu = nu(labUnit);
+  if (testId === 'platelets' && /lakh/.test(lu)) return { value: Math.round(value * 100000), note: `Converted from ${value} lakhs/cumm` };
+  if (['platelets', 'wbc'].includes(testId) && (/10\^?3|10³|thou|k\/ul|x10e3/.test(lu) || (/10\^?9\/l|x10e9/.test(lu)))) return { value: Math.round(value * 1000), note: `Converted from ${value} ${labUnit}` };
+  if (testId === 'rbc' && /10\^?12\/l|10\^?6|mill/.test(lu)) return { value, note: null };
+  if (['fbs', 'ppbs'].includes(testId) && /mmol/.test(lu)) return { value: Math.round(value * 18), note: `Converted from ${value} mmol/L` };
+  return { value, note: null };
+}
+function unitMismatch(testId, labUnit) {
+  const t = S.test(testId); if (!t || !t.unit || !labUnit) return false;
+  const a = nu(t.unit), b = nu(labUnit);
+  if (a === b) return false;
+  const same = [['uiu/ml', 'miu/l'], ['/ul', '/cumm'], ['%', 'percent'], ['g/dl', 'gm/dl', 'gms/dl', 'gm%'], ['mg/dl', 'mg%'], ['iu/ml', 'u/ml'], ['u/l', 'iu/l']];
+  return !same.some(g => g.includes(a) && g.includes(b)) && !(a.endsWith('/ul') && b.endsWith('/ul'));
+}
+
+/* ---------- turning a file into pages {canvas, items, ocr} ---------- */
+async function pdfPages(file, onStep, askPassword) {
+  await loadScript(libUrl('pdf.min.js'));
+  pdfjsLib.GlobalWorkerOptions.workerSrc = libUrl('pdf.worker.min.js');
+  const data = new Uint8Array(await file.arrayBuffer());
+  let doc, password;
+  for (;;) {
+    try { doc = await pdfjsLib.getDocument({ data: data.slice(), password, isEvalSupported: false }).promise; break; }
+    catch (e) {
+      if (e && e.name === 'PasswordException') { password = await askPassword(e.code === 2); if (password === null) throw new Error('cancelled'); continue; }
+      throw new Error('This PDF could not be opened. It may be damaged.');
+    }
+  }
+  const pages = [];
+  for (let p = 1; p <= Math.min(doc.numPages, 12); p++) {
+    onStep(`Reading page ${p} of ${doc.numPages}`, (p - 1) / doc.numPages);
+    const page = await doc.getPage(p); const scale = 2; const vp = page.getViewport({ scale });
+    const canvas = document.createElement('canvas'); canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+    const g = canvas.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: g, viewport: vp }).promise;
+    const tc = await page.getTextContent();
+    const items = RD.clean(tc.items.map(it => { const [a, b, c, d, e, f] = it.transform; const [x, y] = vp.convertToViewportPoint(e, f);
+      return { s: it.str, x, y, w: it.width * scale, h: Math.hypot(c, d) * scale, rotated: Math.abs(b) > 0.01 || Math.abs(c) > 0.01 }; }));
+    pages.push({ canvas, items, ocr: false });
+  }
+  return pages;
+}
+async function imagePage(file) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('This image could not be opened.')); i.src = url; });
+    const long = Math.max(img.naturalWidth, img.naturalHeight); const k = long > 2600 ? 2600 / long : long < 1500 ? 1500 / long : 1;
+    const canvas = document.createElement('canvas'); canvas.width = Math.round(img.naturalWidth * k); canvas.height = Math.round(img.naturalHeight * k);
+    const g = canvas.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, canvas.width, canvas.height); g.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return { canvas, items: [], ocr: true };
+  } finally { URL.revokeObjectURL(url); }
+}
+function forOcr(src) {
+  // greyscale and stretch contrast: helps with shadows and pale print on phone photos
+  const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; const g = c.getContext('2d'); g.drawImage(src, 0, 0);
+  const im = g.getImageData(0, 0, c.width, c.height), d = im.data; let lo = 255, hi = 0; const lum = new Uint8ClampedArray(d.length / 4);
+  for (let i = 0, j = 0; i < d.length; i += 4, j++) { const v = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]; lum[j] = v; }
+  const hist = new Array(256).fill(0); lum.forEach(v => hist[v | 0]++); let acc = 0; const n = lum.length;
+  for (let v = 0; v < 256; v++) { acc += hist[v]; if (acc > n * 0.01 && lo === 255) lo = v; if (acc > n * 0.99) { hi = v; break; } }
+  const span = Math.max(1, hi - lo);
+  for (let i = 0, j = 0; i < d.length; i += 4, j++) { const v = Math.max(0, Math.min(255, (lum[j] - lo) * 255 / span)); d[i] = d[i + 1] = d[i + 2] = v; }
+  g.putImageData(im, 0, 0); return c;
+}
+function tiltOf(data) {
+  // median slope of the recognised text lines (radians); photos are rarely perfectly straight
+  const angles = [];
+  for (const b of data.blocks || []) for (const par of b.paragraphs || []) for (const ln of par.lines || []) {
+    const ws = (ln.words || []).filter(w => w.text && w.text.trim().length > 1);
+    if (ws.length >= 3) {
+      const pts = ws.map(w => [(w.bbox.x0 + w.bbox.x1) / 2, w.bbox.y1]); const n = pts.length;
+      const mx = pts.reduce((s, p) => s + p[0], 0) / n, my = pts.reduce((s, p) => s + p[1], 0) / n;
+      const sxx = pts.reduce((s, p) => s + (p[0] - mx) ** 2, 0), sxy = pts.reduce((s, p) => s + (p[0] - mx) * (p[1] - my), 0);
+      if (sxx > 200 * 200) angles.push(Math.atan2(sxy, sxx));
+    } else if (ln.baseline && ln.baseline.has_baseline !== false && ln.baseline.x1 - ln.baseline.x0 > 200) {
+      angles.push(Math.atan2(ln.baseline.y1 - ln.baseline.y0, ln.baseline.x1 - ln.baseline.x0));
+    }
+  }
+  if (angles.length < 3) return 0;
+  angles.sort((a, b) => a - b); const med = angles[Math.floor(angles.length / 2)];
+  return Math.abs(med) < 0.15 ? med : 0;
+}
+function rotateCanvas(src, ang) {
+  const c = document.createElement('canvas'); c.width = src.width; c.height = src.height; const g = c.getContext('2d');
+  g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.translate(c.width / 2, c.height / 2); g.rotate(ang); g.drawImage(src, -src.width / 2, -src.height / 2);
+  return c;
+}
+async function ocrPages(pages, onStep) {
+  await loadScript(libUrl('tesseract/tesseract.min.js'));
+  let current = 0;
+  const worker = await Tesseract.createWorker('eng', 1, {
+    workerPath: libUrl('tesseract/worker.min.js'), corePath: libUrl('tesseract/'), langPath: libUrl('tesseract'), workerBlobURL: false, gzip: true,
+    logger: m => { if (m.status === 'recognizing text') onStep(`Recognising text (page ${current + 1})`, m.progress); else if (/load|initial/i.test(m.status)) onStep('Preparing the text recogniser (first time takes longer)', m.progress || 0); },
+  });
+  try {
+    await worker.setParameters({ preserve_interword_spaces: '1', user_defined_dpi: '300' });
+    for (const [i, p] of pages.entries()) {
+      if (!p.ocr) continue; current = i;
+      let { data } = await worker.recognize(forOcr(p.canvas), {}, { blocks: true });
+      const tilt = tiltOf(data);
+      if (Math.abs(tilt) > 0.004) {                                  // more than about a quarter of a degree: straighten and read again
+        onStep(`Straightening page ${i + 1}`, 0.5);
+        p.canvas = rotateCanvas(p.canvas, -tilt);
+        ({ data } = await worker.recognize(forOcr(p.canvas), {}, { blocks: true }));
+      }
+      const items = [];
+      for (const b of data.blocks || []) for (const par of b.paragraphs || []) for (const ln of par.lines || []) {
+        // merge words that sit close together into phrases, like PDF text runs
+        let cur = null;
+        for (const w of ln.words || []) {
+          const bb = w.bbox; const hgt = bb.y1 - bb.y0;
+          if (cur && bb.x0 - cur.x1 < hgt * 0.9) { cur.s += ' ' + w.text; cur.x1 = bb.x1; cur.conf = Math.min(cur.conf, w.confidence); cur.y1 = Math.max(cur.y1, bb.y1); cur.h = Math.max(cur.h, hgt); }
+          else { if (cur) items.push(cur); cur = { s: w.text, x: bb.x0, x1: bb.x1, y1: bb.y1, h: hgt, conf: w.confidence }; }
+        }
+        if (cur) items.push(cur);
+      }
+      p.items = RD.clean(items.map(it => ({ s: it.s, x: it.x, w: it.x1 - it.x, y: it.y1 - it.h * 0.18, h: it.h, conf: it.conf })));
+    }
+  } finally { await worker.terminate(); }
+}
+async function loadReport(file, onStep, askPassword) {
+  const isPdf = /pdf/i.test(file.type) || /\.pdf$/i.test(file.name);
+  let pages;
+  if (isPdf) {
+    pages = await pdfPages(file, onStep, askPassword);
+    pages.forEach(p => { if (p.items.length < 8) p.ocr = true; });              // scanned page with no text inside
+  } else if (/^image\//.test(file.type) || /\.(jpe?g|png|webp|heic)$/i.test(file.name)) pages = [await imagePage(file)];
+  else throw new Error('Choose a PDF or a photo of the report.');
+  if (pages.some(p => p.ocr)) await ocrPages(pages, onStep);
+  onStep('Finding the test results', 1);
+  return pages;
+}
+function snippet(page, box) {
+  const c = page.canvas; const pad = 6;
+  const left = Math.max(0, box.left - pad * 2), right = Math.min(c.width, (box.coreRight || box.right) + pad * 2);
+  const top = Math.max(0, box.top - pad), bottom = Math.min(c.height, box.bottom + pad);
+  const w = right - left, hh = Math.max(10, bottom - top);
+  const out = document.createElement('canvas'); const k = Math.min(1, 1000 / w); out.width = Math.round(w * k); out.height = Math.round(hh * k);
+  out.getContext('2d').drawImage(c, left, top, w, hh, 0, 0, out.width, out.height);
+  return out.toDataURL('image/jpeg', 0.8);
+}
+function pageJpeg(canvas) {
+  const k = Math.min(1, 1600 / canvas.width); const c = document.createElement('canvas'); c.width = Math.round(canvas.width * k); c.height = Math.round(canvas.height * k);
+  c.getContext('2d').drawImage(canvas, 0, 0, c.width, c.height); const b = c.toDataURL('image/jpeg', 0.8).split(',')[1];
+  return { mime: 'image/jpeg', bytes: Math.round(b.length * 0.75), dataBase64: b };
+}
+
+/* ---------- the screens ---------- */
+function viewRead(route) {
+  if (!readerAvailable()) return `<div class="page" style="max-width:760px"><div class="page-head"><h1>Read a lab report</h1></div>
+    <div class="panel pad"><p class="muted">Reading PDFs and photos works in your own copy of the app at <b>davefamilyvault.github.io</b>. In this preview, add reports by typing them in.</p>
+    <a class="btn primary" style="margin-top:14px" href="#/add">${icon('plus')}Type in a report</a></div></div>`;
+  const st = READ.state;
+  if (st && st.stage === 'review') return reviewHtml(st);
+  if (st && st.stage === 'busy') return `<div class="page" style="max-width:760px"><div class="page-head"><h1>Reading the report</h1></div>
+    <div class="panel pad"><p id="rd-step" class="muted">${esc(st.step || 'Opening the file')}</p><div class="progress"><span id="rd-bar" style="width:${Math.round((st.progress || 0) * 100)}%"></span></div>
+    <p class="faint small" style="margin-top:12px">Everything is read on this device. Nothing is uploaded.</p></div></div>`;
+  return `<div class="page" style="max-width:760px"><a class="back" href="${route.member ? '#/p/' + esc(route.member.key) : '#/'}">${icon('back')}Back</a>
+    <div class="page-head"><div><h1>Read a lab report</h1><p class="lead">Choose the PDF the lab sent, or a photo of a paper report. The app finds the values; you check them before anything is saved.</p></div></div>
+    <div class="drop" id="rd-drop"><h2>${icon('file')} Choose the report</h2><p class="muted" style="margin:8px 0 16px">A PDF from WhatsApp or email works best. Photos work too: lay the page flat, in good light, and fill the frame.</p>
+      <div class="row" style="justify-content:center"><label class="btn primary">${icon('upload')}Choose PDF or photo<input type="file" accept="application/pdf,image/*" hidden id="rd-file"></label>
+      <label class="btn only-touch">${icon('image')}Take a photo<input type="file" accept="image/*" capture="environment" hidden id="rd-cam"></label></div></div>
+    <ul class="steps"><li><span class="n">1</span><span><b>PDFs from the lab are read exactly</b>, straight from the text inside the file.</span></li>
+      <li><span class="n">2</span><span><b>Photos and scans are read with text recognition (OCR)</b>. It is good but not perfect, so those values are marked for checking.</span></li>
+      <li><span class="n">3</span><span><b>Every value is shown next to the line of the report it came from</b>, so checking takes a glance.</span></li></ul>
+    <p class="faint small" style="margin-top:18px">Everything is read on this device. Nothing is uploaded.</p>
+    <p style="margin-top:10px"><a href="#/add${route.member ? '?p=' + esc(route.member.key) : ''}">Or type the values in yourself</a></p></div>`;
+}
+function afterRead(route) {
+  if (!readerAvailable()) return;
+  const st = READ.state;
+  if (st && st.stage === 'review') return afterReview(st);
+  if (st && st.stage === 'busy') return;
+  const pick = e => { const f = e.target.files[0]; if (f) startReading(f, route); };
+  const inp = $('#rd-file'); if (inp) inp.onchange = pick; const cam = $('#rd-cam'); if (cam) cam.onchange = pick;
+  const drop = $('#rd-drop');
+  if (drop) { ['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+    ['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+    drop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) startReading(f, route); }); }
+  if (route.shared) takeSharedFile(route);
+}
+async function takeSharedFile(route) {
+  try {
+    const key = new URL('./__shared__', location.href).href; const c = await caches.open('fh-share'); const r = await c.match(key); if (!r) return;
+    const blob = await r.blob(); const name = decodeURIComponent(r.headers.get('X-Name') || 'report'); await c.delete(key);
+    startReading(new File([blob], name, { type: blob.type || r.headers.get('Content-Type') || '' }), route);
+  } catch (e) { /* nothing shared */ }
+}
+function askPasswordDialog(wrong) {
+  return new Promise(res => {
+    const o = h(`<div class="overlay" role="dialog" aria-modal="true"><form class="dialog" novalidate><h2>This PDF is locked</h2>
+      <p class="muted" style="margin:8px 0 14px">${wrong ? '<b class="c-bad">That password did not work.</b> ' : ''}Labs often use the mobile number, or the name and birth year, as the password. Check the lab's message.</p>
+      <label class="field"><span>PDF password</span><input class="input" name="p" type="password" autocomplete="off"></label>
+      <div class="row" style="justify-content:flex-end;margin-top:14px"><button type="button" class="btn" data-x>Cancel</button><button class="btn primary">Open</button></div></form></div>`);
+    const f = $('form', o); document.body.appendChild(o); f.p.focus();
+    $('[data-x]', o).onclick = () => { o.remove(); res(null); };
+    f.onsubmit = e => { e.preventDefault(); o.remove(); res(f.p.value); };
+  });
+}
+async function startReading(file, route) {
+  READ.state = { stage: 'busy', step: 'Opening the file', progress: 0 }; router();
+  const onStep = (msg, p) => { READ.state.step = msg; READ.state.progress = p; const s = $('#rd-step'), b = $('#rd-bar'); if (s) s.textContent = msg; if (b) b.style.width = Math.round((p || 0) * 100) + '%'; };
+  try {
+    const pages = await loadReport(file, onStep, askPasswordDialog);
+    const res = RD.read(pages, S.live('tests'), S.memberOrder);
+    const member = (res.who && res.who.member) || route.member || null;
+    READ.state = { stage: 'review', file, pages, head: res.head, who: res.who, memberId: member ? member.id : '', rows: res.rows.map(r => prepRow(r, pages)),
+      date: res.head.date || todayIso(), time: res.head.time || '', lab: res.head.lab || '', keepDoc: true, ocr: pages.some(p => p.ocr), mode: null };
+    router();
+  } catch (e) {
+    READ.state = null; router();
+    if (e.message !== 'cancelled') toast(e.message || 'The report could not be read.');
+  }
+}
+function prepRow(r, pages) {
+  const t = r.testId ? S.test(r.testId) : null;
+  let value = r.value, note = null;
+  if (t && typeof value === 'number') { const cv = convertUnit(t.id, value, r.unit); value = cv.value; note = cv.note; }
+  const calc = !!(t && t.calculated);
+  return { ...r, value, convNote: note, include: !!t && !calc, calc, snip: snippet(pages[r.page], r.box), input: typeof value === 'number' ? String(value) : (r.text || '') };
+}
+const DERIVED_NOTE = 'The app calculates this from the other values, so it is not saved separately.';
+function existingReportFor(st) {
+  if (!st.memberId || !st.date) return null;
+  const m = S.members.get(st.memberId);
+  const same = S.reportsOf(m).filter(r => r.date === st.date);
+  return same.find(r => !st.lab || !r.lab || r.lab === st.lab) || null;
+}
+function reviewHtml(st) {
+  const ex = existingReportFor(st); if (ex && !st.mode) st.mode = 'merge'; if (!ex) st.mode = 'new';
+  const m = st.memberId ? S.members.get(st.memberId) : null;
+  const exVals = ex ? new Map(S.resultsOf(ex).map(x => [x.testId, x])) : new Map();
+  const testOpts = sel => `<option value="">Choose the test…</option>` + CAT_ORDER.map(c => { const ts = S.live('tests').filter(t => t.category === c && t.id !== 'ra_or_crp');
+    return ts.length ? `<optgroup label="${esc(c)}">${ts.map(t => `<option value="${esc(t.id)}" ${t.id === sel ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</optgroup>` : ''; }).join('') + `<option value="__new">Add as a new test…</option>`;
+  const rowsHtml = st.rows.map((r, i) => {
+    const t = r.testId ? S.test(r.testId) : null;
+    const v = parseFloat(String(r.input).replace(/,/g, ''));
+    const status = t && t.type !== 'text' && !isNaN(v) && m ? statusChip(statusOf(t.id, v, m)) : '';
+    const exv = t && exVals.get(t.id);
+    let cmp = '';
+    if (st.mode === 'merge' && t && r.include) {
+      if (!exv) cmp = '<span class="badge">New</span>';
+      else if ((typeof exv.value === 'number' && !isNaN(v) && Math.abs(exv.value - v) < 1e-9) || (exv.text && exv.text === r.input)) cmp = '<span class="badge" style="background:var(--ok-soft);color:var(--ok)">Same as saved</span>';
+      else cmp = `<span class="badge" style="background:var(--warn-soft);color:var(--warn)">Replaces ${esc(exv.value !== null && exv.value !== undefined ? fmtNum(exv.value) : exv.text)}${exv.calculated ? ' (calculated)' : ''}</span>`;
+    }
+    const warns = [];
+    if (!t && r.manual) warns.push('Choose the test and type the value from the report.');
+    else if (!t) warns.push('Not recognised. Choose which test this is, or leave it out.');
+    else if (!r.sure) warns.push(`Matched "${esc(r.name)}" to ${esc(t.name)}. Please check.`);
+    if (r.calc) warns.push(DERIVED_NOTE);
+    if (st.ocr && r.conf !== null && r.conf < 88) warns.push('Read from an image: check this value against the report line.');
+    if (t && r.unit && unitMismatch(t.id, r.unit) && !r.convNote) warns.push(`The lab's unit is ${esc(r.unit)}; the app uses ${esc(t.unit)}. Check before saving.`);
+    if (r.convNote) warns.push(esc(r.convNote) + '.');
+    if (t && t.plausible && !isNaN(v) && (v < t.plausible[0] || v > t.plausible[1])) warns.push(`Unusual for ${esc(t.name)} (usually ${fmtNum(t.plausible[0])} to ${fmtNum(t.plausible[1])}). Check the decimal point.`);
+    return `<div class="rrow ${r.include ? '' : 'off'}" data-i="${i}">
+      <label class="rinc"><input type="checkbox" data-f="include" ${r.include ? 'checked' : ''} aria-label="Include ${esc(r.name)}"></label>
+      <div class="rmain">${r.snip ? `<img class="snip" src="${r.snip}" alt="Report line: ${esc(r.name)} ${esc(r.input)} ${esc(r.unit)}">` : '<div class="faint small">Added by you</div>'}
+        <div class="rfields"><select class="input" data-f="test" aria-label="Test">${testOpts(r.testId)}</select>
+          <div class="unitbox"><input class="input" data-f="input" value="${esc(r.input)}" aria-label="Value" inputmode="${t && t.type === 'text' ? 'text' : 'decimal'}"><span>${esc((t && t.unit) || r.unit || '')}</span></div>
+          <div class="rstat">${status}${r.flag === 'H' || r.flag === 'L' ? ` <span class="faint small">Lab marked ${r.flag === 'H' ? 'high' : 'low'}</span>` : ''} ${cmp}</div></div>
+        ${warns.length ? `<div class="rwarn">${warns.map(w => `<div>${w}</div>`).join('')}</div>` : ''}
+        ${r.range ? `<div class="faint small">Lab's range: ${esc(r.range.length > 140 ? r.range.slice(0, 140) + '…' : r.range)}</div>` : ''}</div></div>`;
+  }).join('');
+  const inc = st.rows.filter(r => r.include && r.testId).length;
+  const whoNote = st.head.nameOnReport ? `Name on the report: <b>${esc(st.head.nameOnReport)}</b>${st.head.sex ? `, ${st.head.sex === 'M' ? 'male' : 'female'}` : ''}${st.head.age ? `, ${st.head.age} years` : ''}.` + (st.who ? (st.who.sure ? ' Matched automatically.' : ' Please check the person.') : ' <b class="c-warn">No family member matched; choose the person.</b>') : 'No name found on the report; choose the person.';
+  return `<div class="page" style="max-width:980px"><a class="back" href="#/read" data-restart>${icon('back')}Choose a different file</a>
+    <div class="page-head"><div><h1>Check the values</h1><p class="lead">${st.rows.length} results found in ${esc(st.file.name)}${st.ocr ? ', read with text recognition' : ''}. Untick anything you don't want saved.</p></div>
+      <span class="spacer"></span><button class="btn ghost" data-pages>${icon('image')}View the report</button></div>
+    <div class="panel pad"><div class="grid-2">
+      <label class="field"><span>Person</span><select class="input" id="rd-member"><option value="">Choose the person…</option>${S.memberOrder.map(p => `<option value="${esc(p.id)}" ${p.id === st.memberId ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select><span class="faint small" style="font-weight:400">${whoNote}</span></label>
+      <label class="field"><span>Lab</span><input class="input" id="rd-lab" list="labs" value="${esc(st.lab)}"><datalist id="labs">${S.labs().map(l => `<option value="${esc(l)}">`).join('')}</datalist></label>
+      <label class="field"><span>Date of sample</span><input class="input" type="date" id="rd-date" value="${esc(st.date)}" max="${todayIso()}"></label>
+      <label class="field"><span>Time</span><input class="input" type="time" id="rd-time" value="${esc(st.time)}"></label></div>
+      ${ex ? `<div class="notice" style="margin:16px 0 0;background:var(--primary-soft)">${icon('file')}<div style="flex:1"><b>${esc(m.name)} already has a report on ${fmtDate(st.date)}${ex.lab ? ` from ${esc(ex.lab)}` : ''}</b>
+        <div class="small">${st.mode === 'merge' ? 'These values will be added to it. Values that differ replace the saved ones.' : 'A separate report will be created.'}</div>
+        <div class="chips" style="margin-top:8px"><button class="chip" data-mode="merge" aria-pressed="${st.mode === 'merge'}">Add to that report</button><button class="chip" data-mode="new" aria-pressed="${st.mode === 'new'}">Keep as a separate report</button></div></div></div>` : ''}</div>
+    <div class="section"><div class="rlist2">${rowsHtml || '<div class="panel empty">No test results were found in this file. Add the values below, or type the report in instead.</div>'}</div>
+      <button class="btn" id="rd-addrow" style="margin-top:12px">${icon('plus')}Add a value the reader missed</button></div>
+    <label class="row" style="margin-top:18px"><input type="checkbox" id="rd-keep" ${st.keepDoc ? 'checked' : ''}> Keep the report pages with this report (in History and documents)</label>
+    <p class="c-bad" id="rd-err" role="alert" style="margin-top:12px"></p>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="rd-save">${icon('check')}Save ${inc} value${inc === 1 ? '' : 's'}</button><button class="btn ghost" data-restart>Cancel</button></div></div>`;
+}
+function afterReview(st) {
+  const redraw = () => { clearTimeout(st._rt); st._rt = setTimeout(() => { const y = window.scrollY; router(); window.scrollTo(0, y); }, 0); };
+  $$('[data-restart]').forEach(b => b.onclick = e => { e.preventDefault(); READ.state = null; router(); });
+  $('#rd-member').onchange = e => { st.memberId = e.target.value; st.mode = null; redraw(); };
+  $('#rd-lab').onchange = e => { st.lab = e.target.value.trim(); st.mode = null; redraw(); };
+  $('#rd-date').onchange = e => { st.date = e.target.value; st.mode = null; redraw(); };
+  $('#rd-time').onchange = e => { st.time = e.target.value; };
+  $('#rd-keep').onchange = e => { st.keepDoc = e.target.checked; };
+  $$('[data-mode]').forEach(b => b.onclick = () => { st.mode = b.dataset.mode; redraw(); });
+  const pb = $('[data-pages]'); if (pb) pb.onclick = () => openDocument({ title: st.file.name, kind: 'Lab report', note: '', date: st.date, pages: st.pages.map(p => pageJpeg(p.canvas)), _preview: true }, null);
+  $$('.rrow').forEach(el => {
+    const r = st.rows[+el.dataset.i];
+    $('[data-f=include]', el).onchange = e => { r.include = e.target.checked; redraw(); };
+    $('[data-f=input]', el).onchange = e => { r.input = e.target.value.trim(); redraw(); };
+    $('[data-f=test]', el).onchange = async e => {
+      let id = e.target.value;
+      if (id === '__new') { const t = await newTestDialog(r.name); if (!t) { redraw(); return; } id = t.id; }
+      r.testId = id || null; r.sure = true; r.userMapped = !!id && !r.manual; r.calc = !!(id && S.test(id).calculated); r.include = !!id && !r.calc; redraw();
+    };
+  });
+  $('#rd-addrow').onclick = () => { st.rows.push({ name: '', manual: true, testId: null, sure: true, value: null, text: null, unit: '', range: '', conf: null, include: false, calc: false, snip: null, input: '', page: 0 }); redraw();
+    const last = $$('.rrow').pop(); if (last) { last.scrollIntoView({ block: 'center' }); $('[data-f=test]', last).focus(); } };
+  $('#rd-save').onclick = () => saveRead(st);
+}
+async function saveRead(st) {
+  const err = $('#rd-err'); err.textContent = '';
+  if (!st.memberId) { err.textContent = 'Choose the person this report belongs to.'; return; }
+  if (!st.date) { err.textContent = 'Enter the date of the sample.'; return; }
+  const rows = st.rows.filter(r => r.include && r.testId);
+  if (!rows.length) { err.textContent = 'Tick at least one value to save.'; return; }
+  const out = [];
+  for (const r of rows) {
+    const t = S.test(r.testId);
+    if (t.type === 'text') { out.push({ r, testId: t.id, value: null, text: r.input }); continue; }
+    const raw = String(r.input).replace(/,/g, '').trim(); const q = /^[<>]=?/.exec(raw); const v = parseFloat(raw.replace(/^[<>]=?\s*/, ''));
+    if (isNaN(v)) { err.textContent = `${t.name}: enter a number.`; return; }
+    out.push({ r, testId: t.id, value: v, text: q ? raw : null, qualifier: q ? q[0] : null });
+  }
+  const ex = st.mode === 'merge' ? existingReportFor(st) : null;
+  const rep = ex ? { ...ex } : { id: uid(), createdAt: nowIso(), notes: [], source: [] };
+  Object.assign(rep, { memberId: st.memberId, date: st.date, time: rep.time || st.time || null, lab: rep.lab || st.lab || null });
+  rep.source = [...new Set([...(rep.source || []), `PDF ${st.file.name}`])];
+  await S.save('reports', rep);
+  const existing = ex ? S.resultsOf(ex) : [];
+  const recs = [];
+  for (const o of out) {
+    const cur = existing.find(x => x.testId === o.testId);
+    const base = { value: o.value, text: o.text, qualifier: o.qualifier || null, unit: S.test(o.testId).unit || null, calculated: false,
+      labRange: o.r.range || null, labUnit: o.r.unit || null, source: st.ocr ? 'photo (OCR)' : 'lab PDF', origin: 'reader', originalValue: o.r.value !== null && o.r.value !== undefined ? String(o.r.value) : o.r.text };
+    if (cur) {
+      const same = (cur.value === o.value && (cur.text || null) === (o.text || null));
+      if (!same) recs.push({ ...cur, ...base, replaced: { value: cur.value, text: cur.text || null, calculated: !!cur.calculated, at: nowIso() } });
+    } else recs.push({ id: uid(), reportId: rep.id, memberId: st.memberId, testId: o.testId, ...base });
+  }
+  if (recs.length) await S.save('results', recs);
+  // remember names the user matched by hand, so the next report from this lab is recognised
+  const learned = [];
+  for (const r of st.rows) if (r.userMapped && r.testId) { const t = S.test(r.testId); if (!(t.aliases || []).some(a => RD.norm(a) === RD.norm(r.name))) learned.push({ ...t, aliases: [...(t.aliases || []), r.name] }); }
+  if (learned.length) { for (const t of learned) delete t._order; await S.save('tests', learned); indexTests(); }
+  if (st.keepDoc) {
+    await S.save('documents', { id: uid(), memberId: st.memberId, reportId: rep.id, date: st.date, title: `Lab report${st.lab ? ', ' + st.lab : ''}`, kind: 'Lab report',
+      note: st.file.name, source: st.ocr ? 'photo (OCR)' : 'lab PDF', pages: st.pages.map((p, i) => ({ fileName: `page-${i + 1}.jpg`, ...pageJpeg(p.canvas) })) });
+  }
+  READ.state = null;
+  toast(ex ? `Added to the report of ${fmtDate(st.date)}: ${recs.length} value${recs.length === 1 ? '' : 's'} updated` : `Report saved with ${recs.length} values`);
+  location.hash = '#/r/' + rep.id;
+}
+
+'use strict';
 const prefs = {
   get(k, d) { try { const v = localStorage.getItem('fh-' + k); return v === null ? d : v; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('fh-' + k, v); } catch (e) {} },
@@ -2023,6 +2661,7 @@ function parseRoute() {
   const raw = location.hash.replace(/^#\/?/, '');
   const [path, qs] = raw.split('?'); const q = new URLSearchParams(qs || ''); const p = path.split('/').filter(Boolean).map(decodeURIComponent);
   if (S.isEmpty() && !(p[0] === 'person' && p[1] === 'new')) return { name: 'welcome', title: 'Welcome' };
+  if (p[0] !== 'read' && READ.state && READ.state.stage === 'busy') READ.state = null;
   if (!p.length) return { name: 'home', title: 'Family health' };
   if (p[0] === 'p') {
     const m = S.member(p[1]); if (!m) return { name: 'home', title: 'Family health' };
@@ -2038,6 +2677,7 @@ function parseRoute() {
     else if (S.live('medicines').some(x => x.listId === p[1])) { const m = S.members.get(S.live('medicines').find(x => x.listId === p[1]).memberId); return { name: 'medEdit', listId: p[1], member: m, title: 'Medicines', back: `#/p/${m.key}/medicines` }; } }
   if (p[0] === 'event') { if (p[1] === 'new') { const m = S.member(q.get('p') || ''); if (m) return { name: 'eventEdit', member: m, title: 'Event', back: `#/p/${m.key}/history` }; }
     else { const e = S.events.get(p[1]); if (e) { const m = S.members.get(e.memberId); return { name: 'eventEdit', event: e, member: m, title: 'Event', back: `#/p/${m.key}/history` }; } } }
+  if (p[0] === 'read') { const m = S.member(q.get('p') || ''); return { name: 'read', member: m, shared: q.has('shared'), title: 'Read a lab report', back: m ? `#/p/${m.key}` : '#/' }; }
   if (p[0] === 'data') return { name: 'data', title: 'Backup and export', back: '#/' };
   if (p[0] === 'settings') return { name: 'settings', title: 'Settings', back: '#/' };
   if (p[0] === 'welcome') return { name: 'welcome', title: 'Welcome' };
@@ -2062,6 +2702,7 @@ function router() {
     case 'personEdit': html = viewPersonEdit(route.member); break;
     case 'medEdit': html = viewMedEdit(route); break;
     case 'eventEdit': html = viewEventEdit(route); break;
+    case 'read': html = viewRead(route); break;
     case 'data': html = viewData(); break;
     case 'settings': html = viewSettings(); break;
   }
@@ -2084,6 +2725,7 @@ function router() {
     draw(); window.__redraw = debounce(draw, 150);
     $$('[data-period]').forEach(b => b.onclick = async () => { await S.setMeta('trendPeriod', b.dataset.period); router(); });
   } else window.__redraw = null;
+  if (route.name === 'report') $$('[data-doc]').forEach(b => b.onclick = () => openDocument(S.documents.get(b.dataset.doc), route.member));
   if (route.name === 'report') { const d = $('[data-del]'); if (d) d.onclick = async () => {
     if (!await confirmDialog({ title: 'Delete this report?', body: `The report of ${fmtDate(route.report.date)} and its ${S.resultsOf(route.report).length} values will be removed.`, ok: 'Delete report', danger: true })) return;
     const m = S.members.get(route.report.memberId); await S.remove('results', S.resultsOf(route.report)); await S.remove('reports', route.report); toast('Report deleted'); location.hash = `#/p/${m.key}/reports`; }; }
@@ -2092,6 +2734,7 @@ function router() {
   if (route.name === 'medEdit') afterMedEdit(route);
   if (route.name === 'eventEdit') afterEventEdit(route);
   if (route.name === 'data') afterData();
+  if (route.name === 'read') afterRead(route);
   if (route.name === 'settings') afterSettings();
 }
 async function shrinkImage(file, maxSide = 2000) {
